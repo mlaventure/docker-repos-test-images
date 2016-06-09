@@ -4,4 +4,6 @@ RUN go get github.com/prometheus/graphite_exporter
 
 EXPOSE 9108
 
-CMD graphite_exporter
+COPY graphite_mapping.conf /root/
+
+CMD ["graphite_exporter", "-graphite.mapping-config=/root/graphite_mapping.conf"]
