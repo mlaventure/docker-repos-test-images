@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -x
+
+REPO_NAME=${REPO_NAME:-mlaventure}
+
+for img in $(find images -type f -name Dockerfile)
+do
+	dir=$(dirname $img)
+	(
+		cd $dir
+		image_name=${REPO_NAME}/docker-test-install-from-repo-on-$(basename $dir)
+		docker build -t $image_name .
+		docker push $image_name
+	)
+done

@@ -1,0 +1,117 @@
+#!/bin/bash
+
+set -x
+
+GRAPHITE_EXPORTER_IMG_NAME=${GRAPHITE_EXPORTER_IMG_NAME:-graphite-exporter}
+TEST_IMG_PREFIX=${TEST_IMG_PREFIX:-docker-test-install-from-repo-on}
+TEST_CONTAINER_NAME_PREFIX=${TEST_CONTAINER_NAME_PREFIX:-docker_test_install_from_repo_on}
+
+GRAPHITE_EXPORTER_SERVER=${GRAPHITE_EXPORTER_SERVER:-docker_test_install_from_repo_graphite_exporter}
+DOCKER_INSTALL_TEST_INTERVAL=${DOCKER_INSTALL_TEST_INTERVAL:-30m}
+DOCKER_INSTALL_DOMAIN=${DOCKER_INSTALL_DOMAIN:-"get test experimental"}
+DOCKER_HUB_REPO_NAME=${DOCKER_HUB_REPO_NAME:-mlaventure}
+FORCE_DEPLOY=${FORCE_DEPLOY:-false}
+TARGET_DIST=${TARGET_DIST:-}
+
+start_graphite_exporter() {
+	# pull latest image
+	docker pull ${DOCKER_HUB_REPO_NAME}/${GRAPHITE_EXPORTER_IMG_NAME}
+
+	if [ "$FORCE_DEPLOY" = "true" ] &&  [ -n "$(docker ps -qf name="$GRAPHITE_EXPORTER_SERVER")" ]
+	then
+		docker rm -f $(docker ps -qf name="$GRAPHITE_EXPORTER_SERVER")
+	fi
+
+	docker run -d -i -P --restart always --name $GRAPHITE_EXPORTER_SERVER ${DOCKER_HUB_REPO_NAME}/${GRAPHITE_EXPORTER_IMG_NAME}
+}
+
+get_dist_list() {
+	[ -n "$TARGET_DIST" ] && return 0
+
+	TARGET_DIST=$(find images/{deb,rpm} -mindepth 1 -maxdepth 1 -type d -printf "%f\n")
+}
+
+start_testers() {
+	# populate dist list if needed
+	get_dist_list
+
+	for dist in $TARGET_DIST
+	do
+		# update image
+		img_name="${DOCKER_HUB_REPO_NAME}/${TEST_IMG_PREFIX}-$dist"
+		docker pull $img_name
+
+		for domain in $DOCKER_INSTALL_DOMAIN
+		do
+			cont_name=${TEST_CONTAINER_NAME_PREFIX}_${dist}_for_${domain}
+
+			if [ "$FORCE_DEPLOY" = "true" ] &&  [ -n "$(docker ps -qf name="$cont_name")" ]
+			then
+				docker rm -f $(docker ps -qf name="$cont_name")
+			fi
+
+			docker run -d -i --restart always --link $GRAPHITE_EXPORTER_SERVER -e GRAPHITE_EXPORTER_SERVER=$GRAPHITE_EXPORTER_SERVER -e DOCKER_INSTALL_TEST_INTERVAL=$DOCKER_INSTALL_TEST_INTERVAL -e DOCKER_INSTALL_DOMAIN=$domain --name $cont_name $img_name
+		done
+	done
+}
+
+
+main() {
+	start_graphite_exporter
+	start_testers
+}
+
+usage() {
+	cat <<EOF
+usage: deploy [options]
+    --graphite_export   [name of container running graphite_exporter, default to graphite_exporter]
+    --test-interval     [how often to run the test, default to 30m]
+    --install-domain    [space separated value containing "get", "test" or "experimental" if option is unspecifed deploys them all]
+    --hub-repo          [where to pull the images from]
+    --force             ["true" to remove existing images first]
+    --target-dist       [space separated list of distribution to deploy as expect in the image name (e.g. "debian-jessie centos-7"). If empty all of them are deployed]
+EOF
+	exit $1
+}
+
+[ $# -eq 1 ] && usage 1
+
+while [[ $# > 1 ]]
+do
+	key=$1
+
+	# all our options takes a mandatory argument
+	[ -n "$2" ] || usage 1
+
+	case $key in
+		--graphite-exporter)
+			GRAPHITE_EXPORTER_SERVER="$2"
+			shift
+			;;
+		--test-interval)
+			DOCKER_INSTALL_TEST_INTERVAL="$2"
+			;;
+		--install-domain)
+			DOCKER_INSTALL_DOMAIN="$2"
+			shift
+			;;
+		--hub-repo)
+			DOCKER_HUB_REPO_NAME="$2"
+			shift
+			;;
+		--force)
+			FORCE_DEPLOY="$2"
+			shift
+			;;
+		--target-dist)
+			TARGET_DIST="$2"
+			shift
+			;;
+		*)
+			usage 1
+			;;
+	esac
+	shift
+done
+
+main

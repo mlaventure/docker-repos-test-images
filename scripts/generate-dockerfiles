@@ -1,0 +1,73 @@
+#!/bin/bash
+
+set -o pipefail
+set -x
+
+generate_dockerfiles() {
+	for dist in $(find $1/contrib/builder/{deb,rpm}/amd64 -mindepth 1 -maxdepth 1 -type d)
+	do
+		dist_name=$(basename $dist)
+		image_name=${dist_name/-/:}
+
+		# opensuse always installs from suse repos, skip it
+		if [[ $dist_name =~ ^opensuse ]]
+		then
+			continue
+		fi
+
+		# for wheezy, we need the backports
+		if [ "$image_name" = "debian:wheezy" ]
+		then
+			image_name="debian:wheezy-backports"
+		fi
+
+		if [[ $dist =~ $1/contrib/builder/rpm ]]
+		then
+			dest_dir="images/rpm/$dist_name"
+		else
+			dest_dir="images/deb/$dist_name"
+		fi
+		mkdir -p $dest_dir
+		case $dist_name in
+			opensuse-*)
+				install_cmd="zypper --non-interactive install netcat curl"
+				;;
+			fedora-*)
+				install_cmd="dnf install -y nc"
+				;;
+			centos-*|oraclelinux-*)
+				install_cmd="yum install -y nc"
+				;;
+			*)
+				install_cmd="apt-get update \&\& apt-get install -y --no-install-recommends netcat curl ca-certificates"
+				;;
+		esac
+		cat Dockerfile.template | sed -e "s/__DIST__/${image_name}/" | sed -e "s/__INSTALL_CMD__/${install_cmd}/" > $dest_dir/Dockerfile
+		cp docker-install.sh $dest_dir
+	done
+}
+
+fetch_docker_supported_dist() {
+	(
+		cd $1
+		git init .
+		git remote add -f origin https://github.com/docker/docker
+		git config core.sparseCheckout true
+		echo "contrib/builder/" > .git/info/sparse-checkout
+		git pull origin master
+	)
+}
+
+main() {
+	tmpdir=$(mktemp -d --tmpdir=./)
+
+	# cleanup behind us on exit
+	trap "rm -rf $tmpdir" EXIT
+
+	rm -rf images
+
+	fetch_docker_supported_dist $tmpdir
+	generate_dockerfiles $tmpdir
+}
+
+main
