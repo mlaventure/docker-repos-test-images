@@ -9,4 +9,4 @@ images:
 deploy:
 	@scripts/deploy $(DEPLOY_ARGS)
 
-all: dockerfiles images
+all: dockerfiles images deploy

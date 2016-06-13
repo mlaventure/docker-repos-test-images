@@ -13,16 +13,20 @@ DOCKER_HUB_REPO_NAME=${DOCKER_HUB_REPO_NAME:-mlaventure}
 FORCE_DEPLOY=${FORCE_DEPLOY:-false}
 TARGET_DIST=${TARGET_DIST:-}
 
+DOCKER_OPTIONS=${DOCKER_OPTIONS:-}
+
+DOCKER_CMD="docker $DOCKER_OPTIONS"
+
 start_graphite_exporter() {
 	# pull latest image
-	docker pull ${DOCKER_HUB_REPO_NAME}/${GRAPHITE_EXPORTER_IMG_NAME}
+	${DOCKER_CMD} pull ${DOCKER_HUB_REPO_NAME}/${GRAPHITE_EXPORTER_IMG_NAME}
 
-	if [ "$FORCE_DEPLOY" = "true" ] &&  [ -n "$(docker ps -qf name="$GRAPHITE_EXPORTER_SERVER")" ]
+	if [ "$FORCE_DEPLOY" = "true" ] &&  [ -n "$(${DOCKER_CMD} ps | grep "$GRAPHITE_EXPORTER_SERVER")" ]
 	then
-		docker rm -f $(docker ps -qf name="$GRAPHITE_EXPORTER_SERVER")
+		${DOCKER_CMD} rm -f $(${DOCKER_CMD} ps -qf name="$GRAPHITE_EXPORTER_SERVER")
 	fi
 
-	docker run -d -i -P --restart always --name $GRAPHITE_EXPORTER_SERVER ${DOCKER_HUB_REPO_NAME}/${GRAPHITE_EXPORTER_IMG_NAME}
+	${DOCKER_CMD} run -d -i -P --restart always --name $GRAPHITE_EXPORTER_SERVER ${DOCKER_HUB_REPO_NAME}/${GRAPHITE_EXPORTER_IMG_NAME}
 }
 
 get_dist_list() {
@@ -39,18 +43,20 @@ start_testers() {
 	do
 		# update image
 		img_name="${DOCKER_HUB_REPO_NAME}/${TEST_IMG_PREFIX}-$dist"
-		docker pull $img_name
+		${DOCKER_CMD} pull $img_name
 
 		for domain in $DOCKER_INSTALL_DOMAIN
 		do
 			cont_name=${TEST_CONTAINER_NAME_PREFIX}_${dist}_for_${domain}
 
-			if [ "$FORCE_DEPLOY" = "true" ] &&  [ -n "$(docker ps -qf name="$cont_name")" ]
+			if [ "$FORCE_DEPLOY" = "true" ] &&  [ -n "$(${DOCKER_CMD} ps | grep name="$cont_name")" ]
 			then
-				docker rm -f $(docker ps -qf name="$cont_name")
+				${DOCKER_CMD} rm -f $(${DOCKER_CMD} ps -qf name="$cont_name")
 			fi
 
-			docker run -d -i --restart always --link $GRAPHITE_EXPORTER_SERVER -e GRAPHITE_EXPORTER_SERVER=$GRAPHITE_EXPORTER_SERVER -e DOCKER_INSTALL_TEST_INTERVAL=$DOCKER_INSTALL_TEST_INTERVAL -e DOCKER_INSTALL_DOMAIN=$domain --name $cont_name $img_name
+			${DOCKER_CMD} run -d -i --restart always --link $GRAPHITE_EXPORTER_SERVER -e GRAPHITE_EXPORTER_SERVER=$GRAPHITE_EXPORTER_SERVER -e DOCKER_INSTALL_TEST_INTERVAL=$DOCKER_INSTALL_TEST_INTERVAL -e DOCKER_INSTALL_DOMAIN=$domain --name $cont_name $img_name
+
+			sleep 5m
 		done
 	done
 }
