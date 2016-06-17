@@ -4,6 +4,13 @@
 set -o pipefail
 set -x
 
+# check for -q support
+NC_OPT=""
+if [ "$(nc -h 2>&1 | grep -- '-q')" != "" ]
+then
+	NC_OPTS="-q0"
+fi
+
 get_distrib_name() {
 	[ -n "$DIST_NAME" ] && return 0
 
@@ -56,26 +63,26 @@ GRAPHITE_PATH="test.install.from.${DOCKER_INSTALL_DOMAIN}.docker.com.on.${DIST_N
 
 curl -sSL https://${DOCKER_INSTALL_DOMAIN}.docker.com > install.sh
 
-if [ -n "$DOCKER_APT_URL" ]
-then
-	sed -i "s,^apt_url=".*",apt_url=\"$DOCKER_APT_URL\"," install.sh
-fi
-
-if [ -n "$DOCKER_YUM_URL" ]
-then
-	sed -i "s,^yum_url=".*",yum_url=\"$DOCKER_YUM_URL\"," install.sh
-fi
-
-sh install.sh
-
-# check for -q support
-NC_OPT=""
-if [ "$(nc -h 2>&1 | grep -- '-q')" != "" ]
-then
-	NC_OPTS="-q0"
-fi
-
 ec=$?
+
+if [ $ec = 0 ]
+then
+
+	if [ -n "$DOCKER_APT_URL" ]
+	then
+		sed -i "s,^apt_url=".*",apt_url=\"$DOCKER_APT_URL\"," install.sh
+	fi
+
+	if [ -n "$DOCKER_YUM_URL" ]
+	then
+		sed -i "s,^yum_url=".*",yum_url=\"$DOCKER_YUM_URL\"," install.sh
+	fi
+
+	sh install.sh
+
+	ec=$?
+fi
+
 if [ $ec = 0 ]; then
 	echo "${GRAPHITE_PATH} 1 $(date +%s)" | nc ${NC_OPTS} ${GRAPHITE_EXPORTER_SERVER} 9109
 else
