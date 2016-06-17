@@ -6,6 +6,9 @@ GRAPHITE_EXPORTER_IMG_NAME=${GRAPHITE_EXPORTER_IMG_NAME:-graphite-exporter}
 TEST_IMG_PREFIX=${TEST_IMG_PREFIX:-docker-test-install-from-repo-on}
 TEST_CONTAINER_NAME_PREFIX=${TEST_CONTAINER_NAME_PREFIX:-docker_test_install_from_repo_on}
 
+# Overriadable by command line
+DOCKER_APT_URL=${DOCKER_APT_URL:-""}
+DOCKER_YUM_URL=${DOCKER_YUM_URL:-""}
 GRAPHITE_EXPORTER_SERVER=${GRAPHITE_EXPORTER_SERVER:-docker_test_install_from_repo_graphite_exporter}
 DOCKER_INSTALL_TEST_INTERVAL=${DOCKER_INSTALL_TEST_INTERVAL:-30m}
 DOCKER_INSTALL_DOMAIN=${DOCKER_INSTALL_DOMAIN:-"get test experimental"}
@@ -20,16 +23,15 @@ DOCKER_CMD="docker $DOCKER_OPTIONS"
 REPLACE_EXPORTER="false"
 RESTART_OPTIONS="--restart always"
 
-
 start_graphite_exporter() {
 	# pull latest image
 	${DOCKER_CMD} pull ${DOCKER_HUB_REPO_NAME}/${GRAPHITE_EXPORTER_IMG_NAME}
 
-	if [ -n "$(${DOCKER_CMD} ps | grep "$GRAPHITE_EXPORTER_SERVER")" ]
+	if [ -n "$(${DOCKER_CMD} ps -a | grep "$GRAPHITE_EXPORTER_SERVER")" ]
 	then
 		if [ "$REPLACE_EXPORTER" = "true" ]
 		then
-			${DOCKER_CMD} rm -f $(${DOCKER_CMD} ps -qf name="$GRAPHITE_EXPORTER_SERVER")
+			${DOCKER_CMD} rm -f $(${DOCKER_CMD} ps -aqf name="$GRAPHITE_EXPORTER_SERVER")
 		else
 			return 0
 		fi
@@ -58,12 +60,12 @@ start_testers() {
 		do
 			cont_name=${TEST_CONTAINER_NAME_PREFIX}_${dist}_for_${domain}
 
-			if [ "$FORCE_DEPLOY" = "true" ] &&  [ -n "$(${DOCKER_CMD} ps | grep name="$cont_name")" ]
+			if [ "$FORCE_DEPLOY" = "true" ] &&  [ -n "$(${DOCKER_CMD} ps -a | grep "$cont_name")" ]
 			then
-				${DOCKER_CMD} rm -f $(${DOCKER_CMD} ps -qf name="$cont_name")
+				${DOCKER_CMD} rm -f $(${DOCKER_CMD} ps -aqf name="$cont_name")
 			fi
 
-			${DOCKER_CMD} run ${RESTART_OPTIONS} -d -i --link $GRAPHITE_EXPORTER_SERVER -e GRAPHITE_EXPORTER_SERVER=$GRAPHITE_EXPORTER_SERVER -e DOCKER_INSTALL_TEST_INTERVAL=$DOCKER_INSTALL_TEST_INTERVAL -e DOCKER_INSTALL_DOMAIN=$domain --name $cont_name $img_name
+			${DOCKER_CMD} run ${RESTART_OPTIONS} -d -i --link $GRAPHITE_EXPORTER_SERVER -e GRAPHITE_EXPORTER_SERVER=$GRAPHITE_EXPORTER_SERVER -e DOCKER_INSTALL_TEST_INTERVAL=$DOCKER_INSTALL_TEST_INTERVAL -e DOCKER_INSTALL_DOMAIN=$domain -e DOCKER_APT_URL=$DOCKER_APT_URL -e DOCKER_YUM_URL=$DOCKER_YUM_URL --name $cont_name $img_name
 
 			sleep ${STAGGER_INTERVAL}
 		done
@@ -79,6 +81,8 @@ main() {
 usage() {
 	cat <<EOF
 usage: deploy [options]
+	--apt-url			[apt repo url to use]
+	--yum-url			[yum repo url to use]
     --force             ["true" to remove existing containers first]
     --graphite-export   [name of container running graphite_exporter, default to graphite_exporter]
     --hub-repo          [where to pull the images from]
@@ -125,8 +129,9 @@ do
 			REPLACE_EXPORTER="$2"
 			shift
 			;;
-		--oneshot
+		--oneshot)
 			RESTART_OPTIONS=""
+			DOCKER_INSTALL_TEST_INTERVAL="0m"
 			shift
 			;;
 		--stagger-interval)
@@ -135,6 +140,14 @@ do
 			;;
 		--target-dist)
 			TARGET_DIST="$2"
+			shift
+			;;
+		--apt-url)
+			DOCKER_APT_URL="$2"
+			shift
+			;;
+		--yum-url)
+			DOCKER_YUM_URL="$2"
 			shift
 			;;
 		*)

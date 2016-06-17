@@ -54,7 +54,20 @@ get_distrib_name
 
 GRAPHITE_PATH="test.install.from.${DOCKER_INSTALL_DOMAIN}.docker.com.on.${DIST_NAME}"
 
-curl -sSL https://${DOCKER_INSTALL_DOMAIN}.docker.com | sh
+curl -sSL https://${DOCKER_INSTALL_DOMAIN}.docker.com > install.sh
+
+if [ -n "$DOCKER_APT_URL" ]
+then
+	sed -i "s,^apt_url=".*",apt_url=\"$DOCKER_APT_URL\"," install.sh
+fi
+
+if [ -n "$DOCKER_YUM_URL" ]
+then
+	sed -i "s,^apt_url=".*",apt_url=\"$DOCKER_YUM_URL\"," install.sh
+fi
+
+sh install.sh
+
 
 ec=$?
 if [ $ec = 0 ]; then
