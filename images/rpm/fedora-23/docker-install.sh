@@ -68,12 +68,18 @@ fi
 
 sh install.sh
 
+# check for -q support
+NC_OPT=""
+if [ "$(nc -h 2>&1 | grep -- '-q')" != "" ]
+then
+	NC_OPTS="-q0"
+fi
 
 ec=$?
 if [ $ec = 0 ]; then
-	echo "${GRAPHITE_PATH} 1 $(date +%s)" | nc -q0 ${GRAPHITE_EXPORTER_SERVER} 9109
+	echo "${GRAPHITE_PATH} 1 $(date +%s)" | nc ${NC_OPTS} ${GRAPHITE_EXPORTER_SERVER} 9109
 else
-	echo "${GRAPHITE_PATH} 0 $(date +%s)" | nc -q0 ${GRAPHITE_EXPORTER_SERVER} 9109
+	echo "${GRAPHITE_PATH} 0 $(date +%s)" | nc ${NC_OPTS} ${GRAPHITE_EXPORTER_SERVER} 9109
 fi
 
 sleep ${DOCKER_INSTALL_TEST_INTERVAL}
