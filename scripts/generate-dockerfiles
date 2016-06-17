@@ -10,7 +10,8 @@ generate_dockerfiles() {
 		image_name=${dist_name/-/:}
 
 		# opensuse always installs from suse repos, skip it
-		if [[ $dist_name =~ ^opensuse ]]
+		# oracle requires a license to download the needed kernel-4.1.uek package
+		if [[ $dist_name =~ ^opensuse ]] || [[ $dist_name =~ ^oracle ]]
 		then
 			continue
 		fi
