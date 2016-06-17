@@ -51,7 +51,8 @@ fetch_docker_supported_dist() {
 	(
 		cd $1
 		git init .
-		git remote add -f origin https://github.com/docker/docker
+		git remote add origin https://github.com/docker/docker
+		git fetch --depth=1 origin
 		git config core.sparseCheckout true
 		echo "contrib/builder/" > .git/info/sparse-checkout
 		git pull origin master

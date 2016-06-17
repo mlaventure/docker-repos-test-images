@@ -1,4 +1,4 @@
-.PHONY: all dockerfiles images
+.PHONY: all dockerfiles images deploy
 
 dockerfiles:
 	@scripts/generate-dockerfiles
