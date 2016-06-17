@@ -63,7 +63,7 @@ fi
 
 if [ -n "$DOCKER_YUM_URL" ]
 then
-	sed -i "s,^apt_url=".*",apt_url=\"$DOCKER_YUM_URL\"," install.sh
+	sed -i "s,^yum_url=".*",yum_url=\"$DOCKER_YUM_URL\"," install.sh
 fi
 
 sh install.sh
