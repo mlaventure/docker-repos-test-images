@@ -4,8 +4,9 @@
 
 FROM fedora:22
 
-RUN dnf install -y nc
+RUN dnf install -y nc cronie
 
 COPY docker-install.sh /usr/local/bin
+COPY bootstrap.sh /usr/local/bin
 
-CMD ["docker-install.sh"]
+CMD  bootstrap.sh && cron && tail -f /var/log/docker-install.log

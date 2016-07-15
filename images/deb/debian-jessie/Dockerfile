@@ -4,8 +4,9 @@
 
 FROM debian:jessie
 
-RUN apt-get update && apt-get install -y --no-install-recommends netcat curl ca-certificates
+RUN apt-get update && apt-get install -y --no-install-recommends netcat curl ca-certificates cron
 
 COPY docker-install.sh /usr/local/bin
+COPY bootstrap.sh /usr/local/bin
 
-CMD ["docker-install.sh"]
+CMD  bootstrap.sh && cron && tail -f /var/log/docker-install.log

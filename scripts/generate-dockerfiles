@@ -31,19 +31,20 @@ generate_dockerfiles() {
 		mkdir -p $dest_dir
 		case $dist_name in
 			opensuse-*)
-				install_cmd="zypper --non-interactive install netcat curl"
+				install_cmd="zypper --non-interactive install netcat curl cron"
 				;;
 			fedora-*)
-				install_cmd="dnf install -y nc"
+				install_cmd="dnf install -y nc cronie"
 				;;
 			centos-*|oraclelinux-*)
-				install_cmd="yum install -y nc"
+				install_cmd="yum install -y nc cronie"
 				;;
 			*)
-				install_cmd="apt-get update \&\& apt-get install -y --no-install-recommends netcat curl ca-certificates"
+				install_cmd="apt-get update \&\& apt-get install -y --no-install-recommends netcat curl ca-certificates cron"
 				;;
 		esac
 		cat Dockerfile.template | sed -e "s/__DIST__/${image_name}/" | sed -e "s/__INSTALL_CMD__/${install_cmd}/" > $dest_dir/Dockerfile
+		cp bootstrap.sh $dest_dir
 		cp docker-install.sh $dest_dir
 	done
 }

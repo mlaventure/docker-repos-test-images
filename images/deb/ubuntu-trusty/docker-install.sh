@@ -3,6 +3,30 @@
 # pipe chain exit with the first non zero exit code
 set -o pipefail
 set -x
+set -e
+
+# Get our environment
+if [ -f /testenv ]
+then
+	set -a
+	source /testenv
+	set +a
+fi
+
+function finish {
+	ec=$?
+	if [ $ec == 0 ] ; then ec=1 ; else ec=0 ; fi
+
+	echo "${GRAPHITE_PATH} $ec $(date +%s)" | nc ${NC_OPTS} ${GRAPHITE_EXPORTER_SERVER} 9109
+}
+
+trap finish EXIT
+
+# graphite exporter address
+GRAPHITE_EXPORTER_SERVER=${GRAPHITE_EXPORTER_SERVER:-"graphite_exporter"}
+
+# where to install from? Install the last stable release by default
+DOCKER_INSTALL_DOMAIN=${DOCKER_INSTALL_DOMAIN:-get}
 
 # check for -q support
 NC_OPT=""
@@ -11,8 +35,8 @@ then
 	NC_OPTS="-q0"
 fi
 
-get_distrib_name() {
-	[ -n "$DIST_NAME" ] && return 0
+function get_distrib_name() {
+	[ -n "$DOCKER_TARGET_DIST_NAME" ] && echo $DOCKER_TARGET_DIST_NAME && return 0
 
 	if [ -f /etc/lsb-release ]
 	then
@@ -44,29 +68,16 @@ get_distrib_name() {
 	then
 		DIST_NAME=${DIST_NAME/%${BASH_REMATCH[1]}/}
 	fi
+
+	echo $DIST_NAME
 }
 
-# graphite exporter address
-GRAPHITE_EXPORTER_SERVER=${GRAPHITE_EXPORTER_SERVER:-"graphite_exporter"}
+function install {
+	DOCKER_TARGET_DIST_NAME=$(get_distrib_name)
 
-# where to install from? Install the last stable release by default
-DOCKER_INSTALL_DOMAIN=${DOCKER_INSTALL_DOMAIN:-get}
+	GRAPHITE_PATH="test.install.from.${DOCKER_INSTALL_DOMAIN}.docker.com.on.${DOCKER_TARGET_DIST_NAME}"
 
-# how long to wait between each retry? 1h by default
-DOCKER_INSTALL_TEST_INTERVAL=${DOCKER_INSTALL_TEST_INTERVAL:-1h}
-
-DIST_NAME=${DISTRIB_NAME:-""}
-
-get_distrib_name
-
-GRAPHITE_PATH="test.install.from.${DOCKER_INSTALL_DOMAIN}.docker.com.on.${DIST_NAME}"
-
-curl -sSL https://${DOCKER_INSTALL_DOMAIN}.docker.com > install.sh
-
-ec=$?
-
-if [ $ec = 0 ]
-then
+	curl -sSL https://${DOCKER_INSTALL_DOMAIN}.docker.com > install.sh
 
 	if [ -n "$DOCKER_APT_URL" ]
 	then
@@ -79,16 +90,6 @@ then
 	fi
 
 	sh install.sh
+}
 
-	ec=$?
-fi
-
-if [ $ec = 0 ]; then
-	echo "${GRAPHITE_PATH} 1 $(date +%s)" | nc ${NC_OPTS} ${GRAPHITE_EXPORTER_SERVER} 9109
-else
-	echo "${GRAPHITE_PATH} 0 $(date +%s)" | nc ${NC_OPTS} ${GRAPHITE_EXPORTER_SERVER} 9109
-fi
-
-sleep ${DOCKER_INSTALL_TEST_INTERVAL}
-
-exit $ec
+install

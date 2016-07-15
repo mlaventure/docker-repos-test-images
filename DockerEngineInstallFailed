@@ -1,6 +1,0 @@
-IF absent(docker_install_from_repo_status) == 1 or docker_install_from_repo_status == 0
-LABELS {pd_service="engine"}
-ANNOTATIONS {
-    summary = "Docker Engine installation failed on {{$labels.distribution}}",
-    description = "Installation from {{$labels.release}} was unsuccessfull",
-}

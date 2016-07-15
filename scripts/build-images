@@ -2,8 +2,16 @@
 
 set -x
 
-DOCKER_HUB_REPO_NAME=${DOCKER_HUB_REPO_NAME:-mlaventure}
+DOCKER_HUB_REPO_NAME=${DOCKER_HUB_REPO_NAME:-docker}
 
+# build the graphite_exporter
+(
+	cd graphite-exporter
+	docker build -t ${DOCKER_HUB_REPO_NAME}/docker-test-install-from-repo-graphite-exporter .
+	docker push ${DOCKER_HUB_REPO_NAME}/docker-test-install-from-repo-graphite-exporter
+)
+
+# Build all test images
 for img in $(find images -type f -name Dockerfile)
 do
 	dir=$(dirname $img)

@@ -2,7 +2,7 @@
 
 set -x
 
-GRAPHITE_EXPORTER_IMG_NAME=${GRAPHITE_EXPORTER_IMG_NAME:-graphite-exporter}
+GRAPHITE_EXPORTER_IMG_NAME=${GRAPHITE_EXPORTER_IMG_NAME:-docker-test-install-from-repo-graphite-exporter}
 TEST_IMG_PREFIX=${TEST_IMG_PREFIX:-docker-test-install-from-repo-on}
 TEST_CONTAINER_NAME_PREFIX=${TEST_CONTAINER_NAME_PREFIX:-docker_test_install_from_repo_on}
 
@@ -12,7 +12,7 @@ DOCKER_YUM_URL=${DOCKER_YUM_URL:-""}
 GRAPHITE_EXPORTER_SERVER=${GRAPHITE_EXPORTER_SERVER:-docker_test_install_from_repo_graphite_exporter}
 DOCKER_INSTALL_TEST_INTERVAL=${DOCKER_INSTALL_TEST_INTERVAL:-30m}
 DOCKER_INSTALL_DOMAIN=${DOCKER_INSTALL_DOMAIN:-"get test experimental"}
-DOCKER_HUB_REPO_NAME=${DOCKER_HUB_REPO_NAME:-mlaventure}
+DOCKER_HUB_REPO_NAME=${DOCKER_HUB_REPO_NAME:-docker}
 FORCE_DEPLOY=${FORCE_DEPLOY:-false}
 TARGET_DIST=${TARGET_DIST:-}
 STAGGER_INTERVAL=${STAGGER_INTERVAL:-5m}
@@ -87,7 +87,6 @@ usage: deploy [options]
     --graphite-export   [name of container running graphite_exporter, default to graphite_exporter]
     --hub-repo          [where to pull the images from]
     --install-domain    [space separated value containing "get", "test" or "experimental" if option is unspecifed deploys them all]
-    --oneshot           ["true" to only run the install container once and then delete them]
 	--replace-exporter  ["true" to replace the exporter if it is already running]
 	--stagger-interval	[How long to wait between each container start, default to 5m]
     --target-dist       [space separated list of distribution to deploy as expect in the image name (e.g. "debian-jessie centos-7"). If empty all of them are deployed]
@@ -127,11 +126,6 @@ do
 			;;
 		--replace-exporter)
 			REPLACE_EXPORTER="$2"
-			shift
-			;;
-		--oneshot)
-			RESTART_OPTIONS=""
-			DOCKER_INSTALL_TEST_INTERVAL="0m"
 			shift
 			;;
 		--stagger-interval)

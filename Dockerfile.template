@@ -7,5 +7,6 @@ FROM __DIST__
 RUN __INSTALL_CMD__
 
 COPY docker-install.sh /usr/local/bin
+COPY bootstrap.sh /usr/local/bin
 
-CMD ["docker-install.sh"]
+CMD  bootstrap.sh && cron && tail -f /var/log/docker-install.log
