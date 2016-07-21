@@ -8,5 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends netcat curl ca-
 
 COPY docker-install.sh /usr/local/bin
 COPY bootstrap.sh /usr/local/bin
+COPY savelog /usr/local/bin
 
-CMD  bootstrap.sh && cron && tail -f /var/log/docker-install.log
+CMD  bootstrap.sh && cron && sleep infinity

@@ -8,7 +8,10 @@ DOCKER_HUB_REPO_NAME=${DOCKER_HUB_REPO_NAME:-docker}
 (
 	cd graphite-exporter
 	docker build -t ${DOCKER_HUB_REPO_NAME}/docker-test-install-from-repo-graphite-exporter .
-	docker push ${DOCKER_HUB_REPO_NAME}/docker-test-install-from-repo-graphite-exporter
+	if [ "${NO_PUSH}" = "" ]
+	then
+		docker push ${DOCKER_HUB_REPO_NAME}/docker-test-install-from-repo-graphite-exporter
+	fi
 )
 
 # Build all test images
@@ -19,6 +22,9 @@ do
 		cd $dir
 		image_name=${DOCKER_HUB_REPO_NAME}/docker-test-install-from-repo-on-$(basename $dir)
 		docker build -t $image_name .
-		docker push $image_name
+		if [ "${NO_PUSH}" = "" ]
+		then
+			docker push $image_name
+		fi
 	)
 done

@@ -46,4 +46,4 @@ fi
 
 echo -n "" > /var/log/docker-install.log
 
-echo "$mins $hours * * * root /usr/local/bin/docker-install.sh 2>&1 >> /var/log/docker-install.log" > /etc/cron.d/docker-install
+echo "$mins $hours * * * root bash -c '/usr/local/bin/savelog -d -D \%Y-\%m-\%d_\%H-\%M-\%S -n -q -c 48 -C -l /var/log/docker-install.log && /usr/local/bin/docker-install.sh > /var/log/docker-install.log 2>&1'" > /etc/cron.d/docker-install
