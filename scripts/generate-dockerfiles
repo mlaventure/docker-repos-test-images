@@ -43,7 +43,7 @@ generate_dockerfiles() {
 				cron_name="crond"
 				;;
 			*)
-				install_cmd="apt-get update \&\& apt-get install -y --no-install-recommends netcat curl ca-certificates cron"
+				install_cmd="apt-get update \&\& apt-get install -y --no-install-recommends netcat curl ca-certificates cron gnupg"
 				cron_name="cron"
 				;;
 		esac

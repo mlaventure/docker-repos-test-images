@@ -4,7 +4,7 @@
 
 FROM ubuntu:precise
 
-RUN apt-get update && apt-get install -y --no-install-recommends netcat curl ca-certificates cron
+RUN apt-get update && apt-get install -y --no-install-recommends netcat curl ca-certificates cron gnupg
 
 COPY docker-install.sh /usr/local/bin
 COPY bootstrap.sh /usr/local/bin
