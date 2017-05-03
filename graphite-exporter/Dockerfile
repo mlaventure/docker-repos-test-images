@@ -1,4 +1,4 @@
-FROM golang:1.6.2
+FROM golang
 
 RUN go get github.com/prometheus/graphite_exporter
 

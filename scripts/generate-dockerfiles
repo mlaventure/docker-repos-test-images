@@ -11,7 +11,7 @@ generate_dockerfiles() {
 
 		# opensuse always installs from suse repos, skip it
 		# oracle requires a license to download the needed kernel-4.1.uek package
-		if [[ $dist_name =~ ^opensuse ]] || [[ $dist_name =~ ^oracle ]]
+		if [[ $dist_name =~ ^opensuse ]] || [[ $dist_name =~ ^oracle ]] || [[ $dist_name =~ ^photon ]]
 		then
 			continue
 		fi
@@ -38,12 +38,12 @@ generate_dockerfiles() {
 				install_cmd="dnf install -y nc cronie"
 				cron_name="crond"
 				;;
-			centos-*|oraclelinux-*)
+			centos-*|oraclelinux-*|amazonlinux-*)
 				install_cmd="yum install -y nc cronie"
 				cron_name="crond"
 				;;
 			*)
-				install_cmd="apt-get update \&\& apt-get install -y --no-install-recommends netcat curl ca-certificates cron gnupg"
+				install_cmd="apt-get update \&\& apt-get install -y --no-install-recommends netcat curl ca-certificates cron gnupg dirmngr"
 				cron_name="cron"
 				;;
 		esac

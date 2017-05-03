@@ -4,7 +4,7 @@
 
 FROM ubuntu:xenial
 
-RUN apt-get update && apt-get install -y --no-install-recommends netcat curl ca-certificates cron gnupg
+RUN apt-get update && apt-get install -y --no-install-recommends netcat curl ca-certificates cron gnupg dirmngr
 
 COPY docker-install.sh /usr/local/bin
 COPY bootstrap.sh /usr/local/bin
